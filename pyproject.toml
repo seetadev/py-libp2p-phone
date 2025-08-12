@@ -1,0 +1,310 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "libp2p"
+version = "0.2.9"
+description = "libp2p: The Python implementation of the libp2p networking stack"
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+license = { text = "MIT AND Apache-2.0" }
+keywords = ["libp2p", "p2p"]
+authors = [
+    { name = "The Ethereum Foundation", email = "snakecharmers@ethereum.org" },
+]
+dependencies = [
+    "base58>=1.0.3",
+    "coincurve>=10.0.0",
+    "exceptiongroup>=1.2.0; python_version < '3.11'",
+    "grpcio>=1.41.0",
+    "lru-dict>=1.1.6",
+    # "multiaddr>=0.0.9",
+    "multiaddr @ git+https://github.com/multiformats/py-multiaddr.git@db8124e2321f316d3b7d2733c7df11d6ad9c03e6",
+    "mypy-protobuf>=3.0.0",
+    "noiseprotocol>=0.3.0",
+    "protobuf>=4.25.0,<5.0.0",
+    "pycryptodome>=3.9.2",
+    "pymultihash>=0.8.2",
+    "pynacl>=1.3.0",
+    "rpcudp>=3.0.0",
+    "trio-typing>=0.0.4",
+    "trio>=0.26.0",
+    "fastecdsa==2.3.2; sys_platform != 'win32'",
+    "zeroconf (>=0.147.0,<0.148.0)",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/libp2p/py-libp2p"
+
+[project.scripts]
+chat-demo = "examples.chat.chat:main"
+echo-demo = "examples.echo.echo:main"
+ping-demo = "examples.ping.ping:main"
+identify-demo = "examples.identify.identify:main"
+identify-push-demo = "examples.identify_push.identify_push_demo:run_main"
+identify-push-listener-dialer-demo = "examples.identify_push.identify_push_listener_dialer:main"
+pubsub-demo = "examples.pubsub.pubsub:main"
+mdns-demo = "examples.mDNS.mDNS:main"
+
+[project.optional-dependencies]
+dev = [
+    "build>=0.9.0",
+    "bump_my_version>=0.19.0",
+    "ipython",
+    "mypy>=1.15.0",
+    "pre-commit>=3.4.0",
+    "tox>=4.0.0",
+    "twine",
+    "wheel",
+    "setuptools>=42",
+    "sphinx>=6.0.0",
+    "sphinx_rtd_theme>=1.0.0",
+    "towncrier>=24,<25",
+    "p2pclient==0.2.0",
+    "pytest>=7.0.0",
+    "pytest-xdist>=2.4.0",
+    "pytest-trio>=0.5.2",
+    "factory-boy>=2.12.0,<3.0.0",
+    "ruff>=0.11.10",
+    "pyrefly (>=0.17.1,<0.18.0)",
+]
+mobile = [
+    # Mobile-specific dependencies
+    "kivy>=2.2.0",
+    "qrcode>=7.4.2",
+    "pyzbar>=0.1.9; sys_platform != 'win32'",
+    "buildozer>=1.5.0",
+    "pyjnius>=1.6.0; sys_platform == 'android'",
+    "plyer>=2.1.0",
+    "kivymd>=1.1.1",
+]
+kivy = [
+    # Kivy app development
+    "kivy>=2.2.0",
+    "kivymd>=1.1.1",
+    "qrcode>=7.4.2",
+    "Pillow>=10.0.0",
+    "plyer>=2.1.0",
+]
+beware = [
+    # BeeWare development (future)
+    "briefcase>=0.3.16",
+    "toga>=0.4.0",
+]
+pyodide = [
+    # Pyodide/WASM support (future)
+    "pyodide-build>=0.24.0",
+]
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx_rtd_theme>=1.0.0",
+    "towncrier>=24,<25",
+    "tomli; python_version < '3.11'",
+]
+test = [
+    "p2pclient==0.2.0",
+    "pytest>=7.0.0",
+    "pytest-xdist>=2.4.0",
+    "pytest-trio>=0.5.2",
+    "factory-boy>=2.12.0,<3.0.0",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["scripts*", "tests*"]
+
+[tool.setuptools.package-data]
+libp2p = ["py.typed"]
+
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = false
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+incremental = false
+strict_equality = true
+strict_optional = true
+warn_redundant_casts = true
+warn_return_any = false
+warn_unused_configs = true
+warn_unused_ignores = false
+
+
+# Explanation:
+# D400 - Enabling this error code seems to make it a requirement that the first
+# sentence in a docstring is not split across two lines.  It also makes it a
+# requirement that no docstring can have a multi-sentence description without a
+# summary line.  Neither one of those requirements seem appropriate.
+
+[tool.pytest.ini_options]
+addopts = "-v --showlocals --durations 50 --maxfail 10"
+log_date_format = "%m-%d %H:%M:%S"
+log_format = "%(levelname)8s  %(asctime)s  %(filename)20s  %(message)s"
+markers = ["slow: mark test as slow"]
+xfail_strict = true
+
+[tool.towncrier]
+# Read https://github.com/libp2p/py-libp2p/blob/main/newsfragments/README.md for instructions
+directory = "newsfragments"
+filename = "docs/release_notes.rst"
+issue_format = "`#{issue} <https://github.com/libp2p/py-libp2p/issues/{issue}>`__"
+package = "libp2p"
+title_format = "py-libp2p v{version} ({project_date})"
+underlines = ["-", "~", "^"]
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bugfixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Improved Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "internal"
+name = "Internal Changes - for py-libp2p Contributors"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous Changes"
+showcontent = false
+
+[[tool.towncrier.type]]
+directory = "performance"
+name = "Performance Improvements"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removal"
+name = "Removals"
+showcontent = true
+
+[tool.bumpversion]
+current_version = "0.2.9"
+parse = """
+    (?P<major>\\d+)
+    \\.(?P<minor>\\d+)
+    \\.(?P<patch>\\d+)
+		(-
+			(?P<stage>[^.]*)
+			\\.(?P<devnum>\\d+)
+		)?
+"""
+serialize = [
+    "{major}.{minor}.{patch}-{stage}.{devnum}",
+    "{major}.{minor}.{patch}",
+]
+search = "{current_version}"
+replace = "{new_version}"
+regex = false
+ignore_missing_version = false
+tag = true
+sign_tags = true
+tag_name = "v{new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = false
+commit = true
+message = "Bump version: {current_version} → {new_version}"
+
+[tool.bumpversion.parts.stage]
+optional_value = "stable"
+first_value = "stable"
+values = ["alpha", "beta", "stable"]
+
+[tool.bumpversion.part.devnum]
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[tool.ruff]
+line-length = 88
+exclude = ["__init__.py", "*_pb2*.py", "*.pyi"]
+
+[tool.ruff.lint]
+select = [
+    "F", # Pyflakes
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "I", # isort
+    "D", # pydocstyle
+]
+# Ignores from pydocstyle and any other desired ones
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D105",
+    "D106",
+    "D107",
+    "D200",
+    "D203",
+    "D204",
+    "D205",
+    "D212",
+    "D400",
+    "D401",
+    "D412",
+    "D415",
+]
+
+[tool.ruff.lint.isort]
+force-wrap-aliases = true
+combine-as-imports = true
+extra-standard-library = []
+force-sort-within-sections = true
+known-first-party = ["libp2p", "tests"]
+known-third-party = ["anyio", "factory", "lru", "p2pclient", "pytest", "noise"]
+force-to-top = ["pytest"]
+
+[tool.ruff.format]
+# Using Ruff's Black-compatible formatter.
+# Options like quote-style = "double" or indent-style = "space" can be set here if needed.
+
+[tool.pyrefly]
+project_includes = ["libp2p", "examples", "tests"]
+project_excludes = [
+    "**/.project-template/**",
+    "**/docs/conf.py",
+    "**/*pb2.py",
+    "**/*.pyi",
+    ".venv/**",
+]
