@@ -5,14 +5,6 @@ This module provides mobile-compatible implementations of the libp2p transport l
 designed to work with asyncio instead of trio for better mobile runtime support.
 """
 
-import sys
-import os
-
-# Ensure the project root is in the Python path for libp2p imports
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
 from .runtime import AsyncRuntimeAdapter, is_mobile_runtime, get_runtime_adapter
 from .transport import MobileTCPTransport, MobileTCPListener
 from .io import MobileAsyncStream, MobileBufferedStream

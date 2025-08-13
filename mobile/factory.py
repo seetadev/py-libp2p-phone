@@ -27,7 +27,7 @@ def create_tcp_transport() -> ITransport:
     else:
         # Use original trio-based transport for desktop
         try:
-            from mobile.libp2p.transport.tcp.tcp import TCP
+            from libp2p.transport.tcp.tcp import TCP
             return TCP()
         except ImportError:
             # Fallback to mobile transport if trio is not available
@@ -47,7 +47,7 @@ def get_transport_class() -> Type[ITransport]:
         return MobileTCPTransport
     else:
         try:
-            from mobile.libp2p.transport.tcp.tcp import TCP
+            from libp2p.transport.tcp.tcp import TCP
             return TCP
         except ImportError:
             return MobileTCPTransport

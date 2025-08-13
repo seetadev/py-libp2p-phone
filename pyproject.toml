@@ -79,33 +79,6 @@ dev = [
     "ruff>=0.11.10",
     "pyrefly (>=0.17.1,<0.18.0)",
 ]
-mobile = [
-    # Mobile-specific dependencies
-    "kivy>=2.2.0",
-    "qrcode>=7.4.2",
-    "pyzbar>=0.1.9; sys_platform != 'win32'",
-    "buildozer>=1.5.0",
-    "pyjnius>=1.6.0; sys_platform == 'android'",
-    "plyer>=2.1.0",
-    "kivymd>=1.1.1",
-]
-kivy = [
-    # Kivy app development
-    "kivy>=2.2.0",
-    "kivymd>=1.1.1",
-    "qrcode>=7.4.2",
-    "Pillow>=10.0.0",
-    "plyer>=2.1.0",
-]
-beware = [
-    # BeeWare development (future)
-    "briefcase>=0.3.16",
-    "toga>=0.4.0",
-]
-pyodide = [
-    # Pyodide/WASM support (future)
-    "pyodide-build>=0.24.0",
-]
 docs = [
     "sphinx>=6.0.0",
     "sphinx_rtd_theme>=1.0.0",

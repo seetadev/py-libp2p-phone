@@ -16,8 +16,7 @@ import time
 # Add path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from p2p_host import RealMobileHost
-from mobile_abc import P2PPeer
+from real_mobile_host import RealMobileHost, MobilePeer
 
 # Set up logging
 logging.basicConfig(
@@ -34,7 +33,7 @@ class SimpleMobileApp:
         self.host: Optional[RealMobileHost] = None
         self.port = port
         self.running = True
-        self.discovered_peers: List[P2PPeer] = []
+        self.discovered_peers: List[MobilePeer] = []
         
     async def start(self):
         """Start the mobile app."""
@@ -76,7 +75,7 @@ class SimpleMobileApp:
         print(f"\n📎 File '{filename}' from {peer_id} ({len(file_data)} bytes)")
         print("> ", end="", flush=True)
     
-    def _on_peer_discovered(self, peer: P2PPeer):
+    def _on_peer_discovered(self, peer: MobilePeer):
         """Handle peer discovery."""
         if peer not in self.discovered_peers:
             self.discovered_peers.append(peer)

@@ -5,61 +5,21 @@ This module provides asyncio-based transport implementations that can run
 on mobile platforms while maintaining compatibility with the existing
 trio-based desktop implementation.
 """
+
 import asyncio
 import logging
 import socket
 from typing import Any, Callable, Optional, Sequence
 from collections.abc import Awaitable
 
-from multiaddr import Multiaddr
-
 from libp2p.abc import IListener, IRawConnection, ITransport
 from libp2p.custom_types import THandler
+from libp2p.network.connection.raw_connection import RawConnection
+from libp2p.transport.exceptions import OpenConnectionError
 from .runtime import get_runtime_adapter, MobileNursery
 from mobile.io import MobileAsyncStream
 
 logger = logging.getLogger("libp2p.mobile.transport")
-
-
-class OpenConnectionError(Exception):
-    """Exception raised when a connection cannot be opened."""
-    pass
-
-
-class MobileRawConnection(IRawConnection):
-    """Mobile implementation of IRawConnection."""
-    
-    def __init__(self, stream: MobileAsyncStream, initiator: bool = False):
-        self.stream = stream
-        self.initiator = initiator
-    
-    async def read(self, n: int | None = None) -> bytes:
-        """Read data from the connection."""
-        return await self.stream.read(n)
-    
-    async def write(self, data: bytes) -> None:
-        """Write data to the connection."""
-        await self.stream.write(data)
-    
-    async def close(self) -> None:
-        """Close the connection."""
-        await self.stream.close()
-    
-    def get_remote_addr(self) -> Multiaddr:
-        """Get the remote address."""
-        remote = self.stream.get_remote_address()
-        if remote:
-            host, port = remote
-            return Multiaddr(f"/ip4/{host}/tcp/{port}")
-        return Multiaddr("/ip4/0.0.0.0/tcp/0")
-    
-    def get_local_addr(self) -> Multiaddr:
-        """Get the local address."""
-        local = self.stream.get_local_address()
-        if local:
-            host, port = local
-            return Multiaddr(f"/ip4/{host}/tcp/{port}")
-        return Multiaddr("/ip4/0.0.0.0/tcp/0")
 
 
 class MobileTCPListener(IListener):
@@ -228,7 +188,7 @@ class MobileTCPTransport(ITransport):
                 reader, writer = await asyncio.open_connection(host_str, port_int)
                 stream = MobileAsyncStream(reader, writer)
                 
-            return MobileRawConnection(stream, True)  # True indicates we initiated the connection
+            return RawConnection(stream, True)  # True indicates we initiated the connection
             
         except OSError as error:
             raise OpenConnectionError(
