@@ -166,16 +166,14 @@ class TrioNursery(MobileNursery):
             raise RuntimeError("Trio nursery not available")
 
 
-# Global runtime adapter instance
-_runtime_adapter = AsyncRuntimeAdapter()
-
-
-def get_runtime_adapter() -> AsyncRuntimeAdapter:
-    """Get the global runtime adapter instance."""
-    return _runtime_adapter
-
-
-def set_runtime_adapter(adapter: AsyncRuntimeAdapter) -> None:
-    """Set a custom runtime adapter."""
-    global _runtime_adapter
-    _runtime_adapter = adapter
+def get_runtime_adapter(force_asyncio: bool = False) -> "AsyncRuntimeAdapter":
+    """
+    Get a runtime adapter instance.
+    
+    Args:
+        force_asyncio: If True, force use of asyncio even on desktop
+        
+    Returns:
+        An instance of the runtime adapter
+    """
+    return AsyncRuntimeAdapter(force_asyncio=force_asyncio)
