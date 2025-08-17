@@ -15,13 +15,12 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from libp2p import new_host
-from libp2p.crypto.key import KeyPair
-from libp2p.crypto.rsa import generate_new_key_pair
-from libp2p.network.stream.net_stream_interface import INetStream
+from libp2p import new_host, generate_new_rsa_identity
+from libp2p.crypto.keys import KeyPair
 from libp2p.peer.id import ID as PeerID
 from libp2p.peer.peerinfo import PeerInfo
-from libp2p.typing import TProtocol
+from libp2p.abc import INetStream
+from libp2p.custom_types import TProtocol
 from multiaddr import Multiaddr
 
 from mobile.runtime import get_runtime_adapter, AsyncRuntimeAdapter
@@ -50,7 +49,8 @@ class LibP2PMobileHost:
         self.port = port
         self.force_asyncio = force_asyncio
         self.host = None
-        self.key_pair: KeyPair = generate_new_key_pair()
+        # Generate a keypair using the repo helper
+        self.key_pair: KeyPair = generate_new_rsa_identity()
         self.is_running = False
         
         self.runtime: AsyncRuntimeAdapter = get_runtime_adapter(force_asyncio=self.force_asyncio)
@@ -63,32 +63,86 @@ class LibP2PMobileHost:
         # Peer tracking
         self.connected_peers: Dict[PeerID, INetStream] = {}
         self.discovered_peers: Dict[str, P2PPeer] = {}
+        # Listen addresses to use when running the host
+        self.listen_addrs: List[Multiaddr] = []
+
+    async def connect_to_peer(self, address: str, port: int) -> bool:
+        """Connect to a peer by address and port."""
+        if not self.host:
+            logger.error("Host not started")
+            return False
+        
+        try:
+            # Create a temporary peer ID for this manual connection
+            manual_peer_id = f"manual_{address}_{port}"
+            
+            # Add this to discovered peers for tracking
+            if manual_peer_id not in self.discovered_peers:
+                self.discovered_peers[manual_peer_id] = P2PPeer(
+                    peer_id=manual_peer_id,
+                    address=address,
+                    port=port,
+                    display_name=f"Manual {address}:{port}"
+                )
+            
+            logger.info(f"Attempting to connect to peer at {address}:{port}")
+            
+            # Try to connect using multiaddr
+            maddr = Multiaddr(f"/ip4/{address}/tcp/{port}")
+            
+            # We need to discover the actual peer ID first via a bootstrap connection
+            logger.info("Attempting connection to manual peer - discovery needed")
+            logger.info(f"Attempting to connect to {maddr}")
+            
+            # Direct connection without peer ID (will fail but helps with discovery)
+            try:
+                # Use dial method to try connecting
+                await self.host.get_network().dial_peer(maddr)
+                logger.info(f"Successfully connected to {address}:{port}")
+                return True
+            except Exception as e:
+                logger.error(f"Connection attempt failed: {e}")
+                return False
+        
+        except Exception as e:
+            logger.error(f"Failed to connect to peer {address}:{port}: {e}")
+            return False
 
     async def start(self):
         """
-        Prepare the host but do not start listening yet.
-        This sets up the host object with its configuration.
+        Start the host and begin listening for connections.
         """
         if self.host:
             logger.warning("Host already started.")
             return
 
-        listen_addr = Multiaddr(f"/ip4/0.0.0.0/tcp/{self.port}")
-        
-        # Use the runtime adapter to select the async backend
-        self.host = await new_host(
-            listen_addrs=[listen_addr],
-            identity=self.key_pair,
-            # The `new_host` function will use the currently running event loop,
-            # which is determined by our runtime adapter's context.
-        )
-        
-        # Set up protocol handlers
-        self.host.set_stream_handler(CHAT_PROTOCOL, self._chat_stream_handler)
-        self.host.set_stream_handler(FILE_PROTOCOL, self._file_stream_handler)
-        
-        logger.info(f"Host prepared with ID: {self.host.get_id().to_string()}")
-        logger.info(f"Will listen on: {listen_addr}")
+        logger.info(f"Using runtime: {self.runtime.runtime_name}")
+
+        try:
+            # Prepare listen address and create the host (non-blocking)
+            listen_addr = Multiaddr(f"/ip4/0.0.0.0/tcp/{self.port}")
+            self.listen_addrs = [listen_addr]
+
+            # Create host instance (synchronous in this repo API)
+            self.host = new_host(key_pair=self.key_pair, listen_addrs=self.listen_addrs)
+
+            # Register protocol handlers (BasicHost handles negotiation)
+            self.host.set_stream_handler(CHAT_PROTOCOL, self._chat_stream_handler)
+            self.host.set_stream_handler(FILE_PROTOCOL, self._file_stream_handler)
+
+            logger.info("LibP2P host prepared; call run() to start listening")
+            logger.info(f"Peer ID (prepared): {str(self.host.get_id())}")
+            self.is_running = False
+
+        except Exception as e:
+            logger.error(f"Failed to start LibP2P mobile host: {e}")
+            if self.host:
+                try:
+                    await self.host.close()
+                except Exception:
+                    pass
+                self.host = None
+            raise
 
     def run(self):
         """
@@ -97,18 +151,19 @@ class LibP2PMobileHost:
         """
         if not self.host:
             raise RuntimeError("Host has not been started. Call start() first.")
-        
-        return self.host.run(
-            started_callback=self._on_host_started,
-            finished_callback=self._on_host_finished
-        )
+
+        # Return the host's async context manager which will start listeners
+        return self.host.run(self.listen_addrs)
 
     async def _on_host_started(self):
         """Callback when the host has started listening."""
+        # Note: BasicHost doesn't call this callback. Keep for compatibility.
         self.is_running = True
-        logger.info("Host is now running and listening for connections.")
-        for addr in self.host.get_listen_addrs():
-            logger.info(f"  - {addr.to_string()}/p2p/{self.host.get_id().to_string()}")
+        try:
+            addrs = [str(a) for a in self.host.get_addrs()]
+        except Exception:
+            addrs = []
+        logger.info(f"Host is now running. listen_addrs={addrs}")
 
     async def _on_host_finished(self):
         """Callback when the host has stopped."""
@@ -117,7 +172,7 @@ class LibP2PMobileHost:
 
     async def stop(self):
         """Stop the libp2p host."""
-        if self.host and self.is_running:
+        if self.host:
             await self.host.close()
             self.host = None
             self.is_running = False
@@ -145,9 +200,12 @@ class LibP2PMobileHost:
 
     def get_listen_addresses(self) -> List[str]:
         """Get the addresses the host is listening on."""
-        if not self.host or not self.is_running:
+        if not self.host:
             return []
-        return [addr.to_string() for addr in self.host.get_listen_addrs()]
+        try:
+            return [str(a) for a in self.host.get_addrs()]
+        except Exception:
+            return []
 
     def get_connection_info(self) -> str:
         """Get a shareable connection string (full multiaddr)."""
@@ -164,13 +222,44 @@ class LibP2PMobileHost:
 
     def get_connected_peers(self) -> List[P2PPeer]:
         """Get a list of currently connected peers."""
-        return [self.discovered_peers[p.to_string()] for p in self.connected_peers.keys()]
+        # Map connected peer IDs to P2PPeer entries where possible
+        connected = []
+        try:
+            live_ids = self.host.get_connected_peers()
+        except Exception:
+            live_ids = []
+        for pid in live_ids:
+            pid_str = str(pid)
+            if pid_str in self.discovered_peers:
+                connected.append(self.discovered_peers[pid_str])
+            else:
+                connected.append(P2PPeer(peer_id=pid_str, address="", port=0, display_name=pid_str))
+        return connected
 
     def get_discovered_peers(self) -> List[P2PPeer]:
         """Get a list of all discovered peers."""
         return list(self.discovered_peers.values())
 
     # --- Protocol Handlers ---
+
+    async def send_chat_message(self, peer: P2PPeer, message: str) -> bool:
+        """Send a chat message to a peer."""
+        if not self.host:
+            return False
+        try:
+            # Convert peer id string to ID if necessary
+            if isinstance(peer.peer_id, str):
+                peer_id = PeerID.from_base58(peer.peer_id)
+            else:
+                peer_id = peer.peer_id
+            stream = await self.host.new_stream(peer_id, [CHAT_PROTOCOL])
+            await stream.write(message.encode('utf-8'))
+            await stream.close()
+            logger.info(f"Chat message sent to {peer.peer_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send chat message to {peer.peer_id}: {e}")
+            return False
 
     async def _chat_stream_handler(self, stream: INetStream):
         """Handle incoming chat messages."""
@@ -215,21 +304,6 @@ class LibP2PMobileHost:
 
     # --- Public Methods for Sending Data ---
 
-    async def send_chat_message(self, peer: P2PPeer, message: str) -> bool:
-        """Send a chat message to a peer."""
-        if not self.host:
-            return False
-        try:
-            peer_id = PeerID.from_string(peer.peer_id)
-            stream = await self.host.new_stream(peer_id, [CHAT_PROTOCOL])
-            await stream.write(message.encode('utf-8'))
-            await stream.close()
-            logger.info(f"Chat message sent to {peer.peer_id}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send chat message to {peer.peer_id}: {e}")
-            return False
-
     async def send_file(self, peer: P2PPeer, file_path: str) -> bool:
         """Send a file to a peer."""
         if not self.host:
@@ -244,7 +318,7 @@ class LibP2PMobileHost:
             filename_len_bytes = len(filename_bytes).to_bytes(4, 'big')
             file_data = p.read_bytes()
             
-            peer_id = PeerID.from_string(peer.peer_id)
+            peer_id = PeerID.from_base58(peer.peer_id)
             stream = await self.host.new_stream(peer_id, [FILE_PROTOCOL])
             
             await stream.write(filename_len_bytes)
