@@ -12,6 +12,7 @@ import socket
 from typing import Any, Callable, Optional, Sequence
 from collections.abc import Awaitable
 
+from multiaddr import Multiaddr
 from libp2p.abc import IListener, IRawConnection, ITransport
 from libp2p.custom_types import THandler
 from libp2p.network.connection.raw_connection import RawConnection
