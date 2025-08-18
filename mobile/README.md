@@ -1,4 +1,3 @@
-
 # Mobile py-libp2p Framework
 
 A mobile-compatible abstraction layer for py-libp2p that enables peer-to-peer networking on Android, iOS, and Progressive Web Apps (PWA).
@@ -16,9 +15,7 @@ This module provides a complete mobile framework that wraps py-libp2p to work on
 ## Core Components
 
 ### 🚀 `asyncio_host.py` - Main Mobile P2P Host
-
 The primary interface for mobile P2P applications. Provides:
-
 - **P2P Connectivity** - Connect to peers across networks
 - **Chat Messaging** - Real-time peer-to-peer messaging
 - **File Transfer** - Send/receive files between peers
@@ -32,16 +29,15 @@ host = MobileP2PHost(port=9001)
 async with host.run():
     # Connect to peer
     await host.connect_to_peer("/ip4/192.168.1.100/tcp/9002")
-  
+    
     # Send chat message
     await host.send_chat_message("Hello from mobile!")
-  
+    
     # Send file
     await host.send_file("photo.jpg")
 ```
 
 ### 🏗️ `framework.py` - Mobile App Framework
-
 Platform detection and mobile app integration utilities:
 
 ```python
@@ -61,7 +57,6 @@ await app.initialize()
 ```
 
 ### ⚙️ `runtime.py` - Async Runtime Adapter
-
 Handles trio/asyncio compatibility for cross-platform deployment:
 
 ```python
@@ -74,7 +69,6 @@ if adapter.use_asyncio:
 ```
 
 ### 🌐 `transport.py` - Mobile Transport Layer
-
 Asyncio-based transport implementations that work on mobile:
 
 ```python
@@ -85,7 +79,6 @@ transport = MobileTCPTransport()
 ```
 
 ### 🏭 `factory.py` - Transport Factory
-
 Automatically chooses the right transport for the platform:
 
 ```python
@@ -96,7 +89,6 @@ transport = create_tcp_transport()
 ```
 
 ### 📡 `io.py` - Mobile I/O Abstractions
-
 Stream and I/O utilities optimized for mobile networking.
 
 ## Quick Start
@@ -126,11 +118,11 @@ from mobile.asyncio_host import MobileP2PHost
 async def main():
     # Create mobile P2P host
     host = MobileP2PHost(port=9001)
-  
+    
     async with host.run():
         print(f"Peer ID: {host.peer_id}")
         print(f"Listening on: {host.listen_addresses}")
-    
+        
         # Your P2P application logic here
         await asyncio.sleep(60)  # Keep running
 
@@ -141,7 +133,6 @@ if __name__ == "__main__":
 ### 3. Platform-Specific Setup
 
 #### Android (Kivy)
-
 ```bash
 # Install Kivy
 pip install kivy
@@ -151,7 +142,6 @@ buildozer android debug
 ```
 
 #### iOS (BeeWare)
-
 ```bash
 # Install BeeWare
 pip install toga
@@ -162,7 +152,6 @@ briefcase build iOS
 ```
 
 #### PWA (Pyodide)
-
 ```bash
 # Build for browser
 pyodide build
@@ -174,20 +163,17 @@ python -m http.server 8000
 ## Key Features
 
 ### ✅ Three Core Deliverables
-
 1. **P2P Connectivity** - Direct peer-to-peer connections
-2. **Chat Messaging** - Real-time messaging between peers
+2. **Chat Messaging** - Real-time messaging between peers  
 3. **File Transfer** - Efficient file sharing
 
 ### ✅ Mobile Optimizations
-
 - **Battery Efficient** - Optimized for mobile power constraints
 - **Network Adaptive** - Handles mobile network switching
 - **Memory Efficient** - Designed for mobile memory limits
 - **Touch Friendly** - Mobile UI considerations
 
 ### ✅ Cross-Platform
-
 - **Unified API** - Same code works on all platforms
 - **Platform Detection** - Automatic platform optimization
 - **Graceful Fallbacks** - Works even with limited capabilities
@@ -227,20 +213,16 @@ Mobile Framework Architecture:
 ### Common Issues
 
 **Trio Compatibility Error**:
-
 ```
 AttributeError: 'RunContext' object has no attribute 'runner'
 ```
-
 **Solution**: Use `asyncio_host.py` instead of the trio-based components.
 
 **Import Errors on Mobile**:
-
 - Make sure all dependencies are included in your mobile build
 - Use the mobile-specific implementations
 
 **Connection Issues**:
-
 - Check firewall settings
 - Ensure peers are on the same network or use proper NAT traversal
 - Verify port availability
@@ -248,7 +230,6 @@ AttributeError: 'RunContext' object has no attribute 'runner'
 ## Examples
 
 See the `mobile_app/` directory for complete working examples including:
-
 - Command-line interface
 - Mobile app configurations
 - Cross-platform deployment scripts
@@ -256,7 +237,6 @@ See the `mobile_app/` directory for complete working examples including:
 ## Contributing
 
 When adding new features:
-
 1. Maintain asyncio compatibility
 2. Test on all target platforms
 3. Follow the "no core modifications" principle
